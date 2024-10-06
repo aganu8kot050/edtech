@@ -1,71 +1,154 @@
-# Getting Started with Create React App
+# タングラムマスター - 正方形パズル
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## ゲーム概要
 
-## Available Scripts
+### ゲーム名
 
-In the project directory, you can run:
+タングラムマスター - 正方形パズル
 
-### `npm start`
+### ゲームタイプ
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+パズルゲーム
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### プラットフォーム
 
-### `npm test`
+Webブラウザ（React.jsを使用）
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 対象年齢
 
-### `npm run build`
+全年齢向け
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### ゲームの目的
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+プレイヤーは用意された7つの形（今後は可変とする）を使用して、指定された形状（現在は正方形）を作り出すことが目的です。
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## ゲーム機能
 
-### `npm run eject`
+- **ピースの移動**: プレイヤーはピースをドラッグアンドドロップで移動できます。
+- **ピースの回転**: 各ピースに付いている回転ボタン（↻）をクリックすると、ピースが45度ずつ回転します。
+- **ピースの反転**: 各ピースに付いている反転ボタン（⇋）をクリックすると、ピースが水平方向に反転します。
+- **完成判定**: すべてのピースが目標エリア内に配置されると、パズルの完成と判定されます。
+- **グリッド表示**: 背景にグリッド線を表示し、ピースの配置を容易にしています。
+- **初期表示と開始**: 最初に完成形の正方形を表示し、各ピースの分割線を見せます。プレイヤーは「Try」ボタンをクリックしてゲームを開始します。
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## ゲーム構成要素
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### ピース
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+元の正方形を7つの図形に切り出したピース（正方形、長方形、三角形など）。ロジックは以下の通りです。
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+#### アルゴリズムの設計と実装
 
-## Learn More
+##### データ構造の定義
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+- **シルエットとピース**を頂点座標の集合として扱う。
+- **n角形**をn個の頂点（v0, ..., vn-1）の反時計回りの順序で表現。
+- 各頂点は**x**と**y**座標データを持つ。
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+##### 解法の基本的な流れ
 
-### Code Splitting
+- シルエットからピースを順次切り抜いていく。
+- **内外判定**と**図形の引き算**を繰り返し実行。
+- すべてのピースが配置されるまで処理を継続。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+##### 入力部の実装
 
-### Analyzing the Bundle Size
+- **画像処理によるデータ取得**
+  - OpenCVライブラリを使用して実物の図形を撮影。
+  - 輪郭検出と矩形抽出機能を用いてピース画像を分離。
+  - シルエットとピースの画像を黒い輪郭線に加工。
+- **頂点座標データの抽出**
+  - 輪郭検出機能で図形の輪郭に沿った画素座標を取得。
+  - 角度計測により頂点を検出し、座標データを抽出。
+  - 近接する頂点候補から最適な頂点を選択。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+##### 処理部の実装
 
-### Making a Progressive Web App
+- **座標の補正**
+  - ピースの角度を45°、90°、135°に補正。
+  - 辺の長さを基準辺の倍数または√2倍に調整。
+  - シルエットの補正を二段階で実施し、面積の一致を確認。
+- **図形の内外判定**
+  - 点の内外判定を基に線分の内外判定を実施。
+  - 線分の内外判定を用いて図形全体の内外判定を行う。
+- **図形の引き算**
+  - ピースとシルエットの重なり部分を考慮して新しい頂点を決定。
+  - 重なった頂点で角度が一致する場合は新しいシルエットから除外。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+##### 出力部の実装
 
-### Advanced Configuration
+- **座標変換と画像出力**
+  - ピースの移動量と回転角度を用いて座標変換を実施。
+  - 変換後の座標データを基に各ピースを画面に表示。
+  - シルエットの形状を再現する最終結果を出力。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+##### プログラムの高速化と改良
 
-### Deployment
+- **無駄な処理の削減**
+  - 明らかにシルエット内に収まらないピースの配置を回避。
+  - 基準辺より短い辺の両端の角度を判定し、解法の継続可否を判断。
+- **高速化の効果**
+  - 46種類のシルエットに対する解の出力平均時間が42%短縮。
+  - より複雑なパズルへの応用可能性が向上。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### ボード
 
-### `npm run build` fails to minify
+- **サイズ**: 600px × 600px
+- **目標エリア**: 中央に400px × 400pxのエリアがあります。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
-# edtech
+### 目標形状
+
+現在は**正方形**（将来的に他の形状も追加予定）
+
+## ゲームの流れ
+
+1. **初期表示**: 最初に完成形の正方形を表示し、各ピースの分割線を見せます。これにより、ピースがどのように分割されるかを理解できます。
+2. **ゲーム開始**: プレイヤーは「Try」ボタンをクリックしてゲームを開始します。
+3. **ピースの配置**: 7つのピースが初期位置に配置されます。
+4. **プレイヤーの操作**: ピースを自由に移動、回転、反転させることができます。
+5. **目標の形状を作成**: ピースを配置して目標形状（現在は正方形）を作ります。
+6. **ゲームクリア**: すべてのピースが目標エリア内に正しく配置されると、ゲームクリアとなります。
+
+## 技術的実装
+
+### フロントエンド
+
+- **使用技術**: React.js
+- **状態管理**: React Hooksを使用（`useState`、`useCallback`、`useEffect`）
+- **スタイリング**: インラインスタイルとTailwind CSSクラスを使用
+
+## 今後の改善点
+
+- 複数の目標形状の実装
+- より精密な完成判定ロジックの実装
+- ヒントシステムの追加
+- 難易度レベルの導入
+- ユーザーのスコアや解答時間の記録機能
+- モバイル対応（タッチ操作の最適化）
+
+## 制限事項
+
+- 現在は単一の正方形パズルのみ実装されています。
+- 完成判定は簡易的なもので、ピースの正確な配置までは確認していません。
+
+## 備考
+
+この仕様は、PDFの内容を参考にしつつ、実際にプレイ可能なWebベースのゲームとして実装されています。PDFで説明されている高度なソルバー機能は現在含まれていませんが、プレイヤーが手動でパズルを解くための基本的な機能は実装されています。
+
+## ライセンス
+
+MIT License
+
+## 作者
+
+- **Your Name**
+
+## 連絡先
+
+- Email: your.email@example.com
+- GitHub: [your-github-username](https://github.com/your-github-username)
+
+## 謝辞
+
+- 元のPDFの貢献者の皆様に感謝いたします。
+
